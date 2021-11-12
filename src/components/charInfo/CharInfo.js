@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import Spinner from '../spinner/Spiner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
@@ -7,74 +7,54 @@ import Skeleton from '../skeleton/Skeleton';
 import MarvelService from '../../services/MarvelService';
 import './charInfo.scss';
 
-class CharInfo extends Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            charHero: null,
-            error: false,
-            loading: false
-        }
-    }
-
-    marvelService = new MarvelService();
+const CharInfo = (props) => {
     
-    componentDidMount() {
-        this.updateCharInfo();
+    const [charHero, setCharHero] = useState(null);
+    const [error, setError] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const marvelService = new MarvelService();
+    
+    useEffect(() => {
+        updateCharInfo();
+    }, [props.charId])
+
+    const onError = () => {
+        setLoading(false);
+        setError(true);
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        if (this.props.charId !== prevProps.charId){
-            this.updateCharInfo();
-        }
-
+    const onStateHero = (charHeros) => {
+        setCharHero(charHeros);
+        setLoading(false);
     }
 
-
-    updateCharInfo = () => {
-        const {charId} = this.props;
+    const updateCharInfo = () => {
+        const {charId} = props;
 
         if(!charId){
             return;
         }
 
-        this.marvelService.getCharacter(charId)
-            .then(this.onStateHero)
-            .catch(this.onError)
+        marvelService.getCharacter(charId)
+            .then(onStateHero)
+            .catch(onError)
     }
 
-    onError = () => {
-        this.setState({
-            loading: false,
-            error: true
-        })
-    }
+    const skeleton = charHero || loading || error ? null : <Skeleton/>;
+    const errorMessage = error ? <ErrorMessage/> : null;
+    const spinner = loading ? <Spinner/> : null;
+    const content = !(loading || error || !charHero) ? <View charHero={charHero}/> : null;
 
-    onStateHero = (charHero) => {
-        this.setState({
-            charHero,
-            loading: false
-        })
-    }
-
-
-    render(){
-        const {charHero, loading, error} = this.state;
-
-        const skeleton = charHero || loading || error ? null : <Skeleton/>;
-        const errorMessage = error ? <ErrorMessage/> : null;
-        const spinner = loading ? <Spinner/> : null;
-        const content = !(loading || error || !charHero) ? <View charHero={charHero}/> : null;
-
-        return (
-            <div className="char__info">
-                {skeleton}
-                {errorMessage}
-                {spinner}
-                {content}
-            </div>
-        )
-    }
+    return (
+        <div className="char__info">
+            {skeleton}
+            {errorMessage}
+            {spinner}
+            {content}
+        </div>
+    )
+    
 }
 
 const View = ({charHero}) => {
